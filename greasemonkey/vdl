@@ -1,0 +1,39 @@
+// ==UserScript==
+// @name         Safari Video Downloader
+// @namespace    http://tampermonkey.net/
+// @version      1.0
+// @description  Detect playing videos and download them in Safari
+// @author       You
+// @match        *://*/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    function downloadVideo(video) {
+        if (!video.src) {
+            console.warn("No video source found!");
+            return;
+        }
+        
+        const link = document.createElement('a');
+        link.href = video.src;
+        link.download = `video_${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function checkVideos() {
+        const videos = document.querySelectorAll('video');
+        videos.forEach(video => {
+            if (!video.paused) {
+                console.log("Detected playing video, starting download...");
+                downloadVideo(video);
+            }
+        });
+    }
+
+    setInterval(checkVideos, 5000);
+})();
