@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Safari Video Downloader
-// @namespace    http://tampermonkey.net/
+// @namespace    https://greasyfork.org/users/your-username
 // @version      1.0
 // @description  Detect playing videos and download them in Safari
-// @author       You
+// @author       YourName
 // @match        *://*/*
+// @license      MIT
 // @grant        none
 // ==/UserScript==
 
@@ -37,3 +38,4 @@
 
     setInterval(checkVideos, 5000);
 })();
+
