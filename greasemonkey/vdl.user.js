@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Safari Video Downloader
 // @namespace    https://greasyfork.org/users/your-username
-// @version      1.5
+// @version      1.6
 // @description  Detect playing videos and show a download button for HLS (m3u8) videos in Safari, download and merge segments automatically
 // @author       YourName
 // @match        *://*/*
@@ -76,8 +76,9 @@
         if (!fileName) return;
         
         try {
+            const baseUrl = new URL(m3u8Url);
             const m3u8Content = await fetch(m3u8Url).then(res => res.text());
-            const tsUrls = m3u8Content.split('\n').filter(line => line.endsWith('.ts'));
+            const tsUrls = m3u8Content.split('\n').filter(line => line.endsWith('.ts')).map(line => new URL(line, baseUrl).href);
             if (tsUrls.length === 0) {
                 alert('No TS segments found.');
                 return;
@@ -85,7 +86,7 @@
 
             let tsBlobs = [];
             for (const tsUrl of tsUrls) {
-                const tsBlob = await fetch(new URL(tsUrl, m3u8Url)).then(res => res.blob());
+                const tsBlob = await fetch(tsUrl).then(res => res.blob());
                 tsBlobs.push(tsBlob);
             }
 
