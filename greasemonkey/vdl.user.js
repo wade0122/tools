@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Safari Video Downloader
 // @namespace    https://greasyfork.org/users/your-username
-// @version      1.2
+// @version      1.3
 // @description  Detect playing videos and show a download button for HLS (m3u8) videos in Safari
 // @author       YourName
 // @match        *://*/*
@@ -69,25 +69,28 @@
             videoItem.style.display = 'block';
             videoItem.style.margin = '5px 0';
             videoItem.style.width = '100%';
-            videoItem.onclick = () => downloadVideo(video);
+            videoItem.onclick = () => promptAndDownload(video);
             listContainer.appendChild(videoItem);
         });
 
         document.body.appendChild(listContainer);
     }
 
-    function downloadVideo(url) {
+    function promptAndDownload(url) {
         if (!url) {
             console.warn("No video source found!");
             return;
         }
+        
+        let fileName = prompt("Enter a name for the downloaded video:", "video.mp4");
+        if (!fileName) return;
         
         fetch(url)
             .then(response => response.blob())
             .then(blob => {
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `video_${Date.now()}.mp4`;
+                link.download = fileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
