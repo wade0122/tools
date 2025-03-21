@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Safari Video Downloader
 // @namespace    https://greasyfork.org/users/your-username
-// @version      1.3
-// @description  Detect playing videos and show a download button for HLS (m3u8) videos in Safari
+// @version      1.5
+// @description  Detect playing videos and show a download button for HLS (m3u8) videos in Safari, download and merge segments automatically
 // @author       YourName
 // @match        *://*/*
 // @license      MIT
@@ -17,14 +17,9 @@
 
     function detectVideos() {
         videoList = [];
-        document.querySelectorAll('video').forEach(video => {
-            if (video.src && !videoList.includes(video.src)) {
-                videoList.push(video.src);
-            }
-        });
-        document.querySelectorAll('source').forEach(source => {
-            if (source.src && !videoList.includes(source.src)) {
-                videoList.push(source.src);
+        document.querySelectorAll('video, source').forEach(element => {
+            if (element.src && !videoList.includes(element.src)) {
+                videoList.push(element.src);
             }
         });
     }
@@ -65,15 +60,45 @@
 
         videoList.forEach((video, index) => {
             const videoItem = document.createElement('button');
-            videoItem.innerText = `Download Video ${index + 1}`;
+            videoItem.innerText = video.includes('.m3u8') ? `Download & Merge m3u8 ${index + 1}` : `Download Video ${index + 1}`;
             videoItem.style.display = 'block';
             videoItem.style.margin = '5px 0';
             videoItem.style.width = '100%';
-            videoItem.onclick = () => promptAndDownload(video);
+            videoItem.onclick = () => video.includes('.m3u8') ? downloadAndMergeM3U8(video) : promptAndDownload(video);
             listContainer.appendChild(videoItem);
         });
 
         document.body.appendChild(listContainer);
+    }
+
+    async function downloadAndMergeM3U8(m3u8Url) {
+        const fileName = prompt("Enter a name for the downloaded video:", "video.mp4");
+        if (!fileName) return;
+        
+        try {
+            const m3u8Content = await fetch(m3u8Url).then(res => res.text());
+            const tsUrls = m3u8Content.split('\n').filter(line => line.endsWith('.ts'));
+            if (tsUrls.length === 0) {
+                alert('No TS segments found.');
+                return;
+            }
+
+            let tsBlobs = [];
+            for (const tsUrl of tsUrls) {
+                const tsBlob = await fetch(new URL(tsUrl, m3u8Url)).then(res => res.blob());
+                tsBlobs.push(tsBlob);
+            }
+
+            const mergedBlob = new Blob(tsBlobs, { type: 'video/mp4' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(mergedBlob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('M3U8 download error:', error);
+        }
     }
 
     function promptAndDownload(url) {
